@@ -25,18 +25,19 @@ class Linear_QNet(nn.Module):
 
 
 class QTrainer:
-    def __init__(self, model, lr, gamma):
+    def __init__(self, model, lr, gamma, device=None):
         self.lr = lr
         self.gamma = gamma
-        self.model = model
+        self.device = torch.device(device if device is not None else ("cuda" if torch.cuda.is_available() else "cpu"))
+        self.model = model.to(self.device)
         self.optimizer = optim.Adam(model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
 
     def train_step(self, state, action, reward, next_state, done):
-        state = torch.tensor(state, dtype=torch.float)
-        next_state = torch.tensor(next_state, dtype=torch.float)
-        action = torch.tensor(action, dtype=torch.long)
-        reward = torch.tensor(reward, dtype=torch.float)
+        state = torch.tensor(state, dtype=torch.float, device=self.device)
+        next_state = torch.tensor(next_state, dtype=torch.float, device=self.device)
+        action = torch.tensor(action, dtype=torch.long, device=self.device)
+        reward = torch.tensor(reward, dtype=torch.float, device=self.device)
         # (n, x)
 
         if len(state.shape) == 1:

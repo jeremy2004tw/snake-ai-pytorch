@@ -9,6 +9,7 @@ from helper import plot
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Agent:
 
@@ -17,8 +18,11 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(11, 256, 3)
-        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
+        self.device = DEVICE
+        if torch.cuda.is_available():
+            torch.backends.cudnn.benchmark = True
+        self.model = Linear_QNet(11, 256, 3).to(self.device)
+        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma, device=self.device)
 
 
     def get_state(self, game):
@@ -92,7 +96,7 @@ class Agent:
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
-            state0 = torch.tensor(state, dtype=torch.float)
+            state0 = torch.tensor(state, dtype=torch.float, device=self.device)
             prediction = self.model(state0)
             move = torch.argmax(prediction).item()
             final_move[move] = 1
@@ -106,6 +110,7 @@ def train():
     total_score = 0
     record = 0
     agent = Agent()
+    print(f"Using device: {agent.device}")
     game = SnakeGameAI()
     while True:
         # get old state
